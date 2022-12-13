@@ -1,0 +1,1098 @@
+openapi: 3.0.2
+info:
+  title: Yupi / coffee
+  description: 'REST интерфейс сервисов ABS по работе c договорами Клиентов '
+  version: 1.0.0
+servers:
+  - url: https://api.dev-fuib.com/gbs/yupi/v1/coffee/v1
+    description: Development server (public)
+  - url: https://core-dbgate.dev-fuib.com/coffee/v1
+    description: Development server (JWT)
+  - url: https://core-dbgate.test-fuib.com/coffee/v1
+    description: Testing server (JWT)
+  - url: https://core-dbgate.stage-fuib.com/coffee/v1
+    description: Stage server (JWT)
+components:
+  parameters:
+    Authorization:
+      required: true
+      name: Authorization
+      in: header
+      schema:
+        type: string
+        example: Bearer eyJhbGc
+      description: request id
+    X-Flow-ID:
+      required: true
+      name: X-Flow-ID
+      in: header
+      schema:
+        type: string
+        maxLength: 150
+        example: 1vbz5x7ivf
+      description: request id
+    X-Systemcode:
+      in: header
+      name: X-Systemcode
+      description: System id
+      required: true
+      schema:
+        type: string
+        maxLength: 15
+        example: '777'
+    X-Username:
+      in: header
+      name: X-Username
+      description: Username
+      required: false
+      schema:
+        type: string
+        maxLength: 150
+        example: ivanov
+    agreement_id:
+      required: true
+      name: agreement_id
+      in: query
+      description: Новый договор
+      schema:
+        type: integer
+        format: int32
+        pattern: ^[0-9]+$
+        example: 56076932
+    full_name:
+      required: false
+      name: full_name
+      in: query
+      description: ФИО сотрудника
+      schema:
+        type: string
+        maxLength: 240
+        example: Голохвостов Свірид Петрович
+    passport_series:
+      required: false
+      name: passport_series
+      in: query
+      description: Серия документа
+      schema:
+        type: string
+        maxLength: 32
+        pattern: ^(\[a-zA-Z]{2}|[\u0430-\u044F\u0410-\u042F]{2})$
+        example: ММ
+    passport_number:
+      required: false
+      name: passport_number
+      in: query
+      description: Номер документа
+      schema:
+        type: string
+        maxLength: 32
+        pattern: ^[0-9]{6,9}$
+        example: 432561
+    ref_agreement_id:
+      required: true
+      name: ref_agreement_id
+      in: query
+      description: Рефинансируемый договор
+      schema:
+        type: integer
+        format: int32
+        pattern: ^[0-9]+$
+        example: 48830885
+    packet_id:
+      name: packet_id
+      in: query
+      description: Id карточного пакета
+      required: true
+      schema:
+        type: integer
+        format: int32
+        pattern: ^\d+$
+        example: 183
+    instant_issue:
+      name: instant_issue
+      in: query
+      description: Является ли продукт для преднапечатанной карты
+      schema:
+        type: integer
+        format: int32
+        pattern: ^\d+$
+        example: 1
+        maximum: 1
+        minimum: 0
+    packet_flag:
+      name: packet_flag
+      in: query
+      description: Является ли продукт пакетным
+      schema:
+        type: integer
+        format: int32
+        pattern: ^\d+$
+        example: 1
+        maximum: 1
+        minimum: 0
+    limit:
+      name: limit
+      in: query
+      description: Колличество записей, которые вернуть
+      schema:
+        type: integer
+        format: int32
+        pattern: ^\d+$
+        example: 100
+        minimum: 0
+    offset:
+      name: offset
+      in: query
+      description: Колличество записей, которые пропустить
+      schema:
+        type: integer
+        format: int32
+        pattern: ^\d+$
+        example: 0
+        minimum: 0
+    treaty_id:
+      required: true
+      name: treaty_id
+      in: query
+      description: ID МАО договора система 4100
+      schema:
+        type: integer
+        format: int32
+        example: 111231
+    bdate:
+      required: true
+      name: bdate
+      in: query
+      description: Дата начала действия договора
+      schema:
+        type: string
+        maxLength: 10
+        example: "2022-08-01"
+    edate:
+      required: true
+      name: edate
+      in: query
+      description: Дата окончания действия договора
+      schema:
+        type: string
+        maxLength: 10
+        example: "2022-09-30"
+
+  schemas:
+    ExceptionResponse:
+      type: object
+      description: ExceptionResponce
+      required:
+        - status
+        - detail
+      properties:
+        status:
+          type: integer
+          description: HTTP status
+          format: int32
+        detail:
+          type: string
+          description: Код и текст ошибки сервиса (для 475 статуса - код и текст ошибки ХП)
+      additionalProperties: false
+    MaoSAgreementsProductItem:
+      type: object
+      description: MaoSAgreementsProduct
+      required:
+        - product_id
+        - product_name
+        - product_info
+        - is_virtual
+        - cards_limit
+      properties:
+        product_id:
+          type: integer
+          description: Id продукта для корпоративной карты
+          format: int32
+        product_name:
+          type: string
+          description: Название продукта
+        product_info:
+          type: string
+          description: Описание продукта
+        is_virtual:
+          type: integer
+          format: int32
+          description: Является ли продукт для преднапечатанной карты 1 - да / 0 - нет
+        cards_limit:
+          type: integer
+          format: int32
+          description: Лимит колличества карт для данного продукта. Если установлено несколько лимитов, то возвращается минимальный.
+      additionalProperties: false
+    MaoTreatyClientItem:
+      type: object
+      properties:
+        full_name:
+          type: string
+          description: ФИО отрудника
+          maxLength: 240
+          example: 'Голохвастов Свирид Петрович'
+        bank_code:
+          type: string
+          description: МФО
+          maxLength: 32
+          example: '334851'
+        moniker:
+          type: string
+          description: Счет
+          maxLength: 32
+          example: '26200111232294'
+        state_code:
+          type: string
+          description: ИНН
+          maxLength: 32
+          example: '2867403838'
+        opened:
+          type: string
+          description: Дата открытия счета
+          example: '2018-02-08'
+          format: datetime
+        rest:
+          type: number
+          description: Остаток
+          example: 0
+          format: double
+        client_id:
+          type: integer
+          description: Ид клиента
+          format: int64
+          pattern: ^[0-9]+$
+          example: 5729227
+        passport_data:
+          type: string
+          description: Документ клиента
+          maxLength: 240
+          example: 'BB123456'
+        iban:
+          type: string
+          description: IBAN
+          maxLength: 32
+          example: 'UA763348510000026200111232294'
+        trans_flag:
+          type: integer
+          description: Флаг разрешения проводок с счета
+          format: int64
+          pattern: ^[0-9]+$
+          example: 0
+        type_flag:
+          type: integer
+          description: Типы счетов для НБУ
+          format: int64
+          pattern: ^[0-9]+$
+          example: 0
+        order_count:
+          type: integer
+          description: Число приказов по счету
+          format: int64
+          pattern: ^[0-9]+$
+          example: 0
+        sub_count:
+          type: integer
+          description: Количество субсчетов
+          format: int64
+          pattern: ^[0-9]+$
+          example: 0
+        closing_previously:
+          type: integer
+          description: Статус предзакрытия счета
+          format: int32
+          pattern: ^[0-1]
+          example: 0
+    CreateLimit:
+      type: object
+      description: CreateLimit
+      required:
+        - limitid
+      properties:
+        limitid:
+          type: integer
+          description: Id существующего неакцептованного лимита для изменения его параметров
+          format: int32
+          example: 87688306
+      additionalProperties: false
+
+    MaoSAgreementsProductResponse:
+      type: object
+      description: MaoSAgreementsProduct
+      required:
+        - products
+      properties:
+        products:
+          type: array
+          description: Массив продуктов
+          items:
+            $ref: '#/components/schemas/MaoSAgreementsProductItem'
+      additionalProperties: false
+      example:
+        {
+          "products": [
+            {
+              "product_id": 1313,
+              "product_name": "Visa Rewards PayWave Instant Issue",
+              "product_info": "Visa Rewards PayWave Instant Issue, преднапечатанная, пакетная, счет дебетной карты",
+              "is_virtual": 0,
+              "cards_limit": 2
+            },
+            {
+              "product_id": 1319,
+              "product_name": "MasterCard World PayPass Debit Instant Issue",
+              "product_info": "MasterCard World PayPass Debit Instant Issue, преднапечатанная, пакетная, счет дебетной карты",
+              "is_virtual": 0,
+              "cards_limit": 2
+            }
+          ]
+        }
+    MaoTreatyClientsResponse:
+      type: object
+      description: MaoTreatyClients
+      required:
+        - clients
+      properties:
+        clients:
+          type: array
+          description: Массив сотрудников по договору
+          items:
+            $ref: '#/components/schemas/MaoTreatyClientItem'
+      additionalProperties: false
+      example:
+        {
+          "clients": [
+            {
+              "full_name": "Форкош Ірина Володимирівна",
+              "bank_code": "334851",
+              "moniker": "26204404182109.UAH",
+              "state_code": "2244307200",
+              "opened": "2018-11-09T00:00:00",
+              "rest": 1459.0100,
+              "client_id": 84521,
+              "passport_data": ";Паспорт;ВК;017869;Артемівським МВ УМВС України в Донецькій обл.,10/04/2004;;;",
+              "iban": "UA893348510000026204404182109",
+              "type_flag": 0,
+              "trans_flag": 35,
+              "order_count": 1,
+              "sub_count": 0,
+              "closing_previously": 0
+            },
+            {
+              "full_name": "Шубіна Людмила Дмитрівна",
+              "bank_code": "334851",
+              "moniker": "26203404667410.UAH",
+              "state_code": "1965111862",
+              "opened": "2018-11-09T00:00:00",
+              "rest": 66900.3700,
+              "client_id": 89876,
+              "passport_data": ";Паспорт;ВВ;879126;Артемівським МВ УМВС України у Донецькій області,13/07/1999;",
+              "iban": "UA583348510000026203404667410",
+              "type_flag": 0,
+              "trans_flag": 35,
+              "order_count": 1,
+              "sub_count": 0,
+              "closing_previously": 0
+            }
+          ]
+        }
+    RefinancingLoanAgreementResponse:
+      description: Объект возвращаемых параметров
+      type: object
+      properties:
+        treaty_app_id:
+          type: integer
+          description: Идентификатор дополнительного соглашения
+          example: 180633261
+          format: int32
+        operation_id:
+          type: integer
+          description: Идентификатор операции
+          example: 255686347
+          format: int32
+    PatchChangeTreatyDatesResponse:
+      description: Объект возвращаемых параметров
+      type: object
+      properties:
+        treaty_id:
+          type: integer
+          description: Ид договора
+          example: 56268794
+          format: int32
+        date_from:
+          type: string
+          description: Дата начала действия договора
+          example: "2022-08-01"
+        date_into:
+          type: string
+          description: Дата окончания действия договора
+          example: "2022-09-30"
+    ChangeTreatyDates:
+      description: Объект входящих параметров
+      type: object
+      required:
+        - agreement_id
+        - bdate
+        - edate
+      properties:
+        agreement_id:
+          type: integer
+          description: Ид договора
+          example: 56268794
+          format: int32
+        bdate:
+          type: string
+          description: Дата начала действия договора
+          example: "2022-08-01"
+        edate:
+          type: string
+          description: Дата окончания действия договора
+          example: "2022-09-30"
+
+    BodyCreateLimit:
+      type: object
+      description: Limit parameters
+      additionalProperties: false
+      required:
+        - ib_agreement_id
+        - date_to
+        - max_amount
+        - max_payment_count
+      properties:
+        ib_agreement_id:
+          type: number
+          format: double
+          example: 4602506
+          description: Id договора ИБ
+        date_to:
+          type: string
+          format: date
+          description: Дата, до которой действует лимит
+        max_amount:
+          type: number
+          format: double
+          example: 2000
+          description: Максимальная сумма операции
+        max_payment_count:
+          type: integer
+          format: int32
+          example: 2
+          description: Максимальное количество операций
+
+
+    BodyAcceptLimit:
+      type: object
+      description: Limit parameters
+      additionalProperties: false
+      required:
+        - ib_agreement_ido
+        - limit_id
+      properties:
+        ib_agreement_id:
+          type: number
+          format: double
+          example: 4602506
+          description: Id договора ИБ
+        limit_id:
+          type: number
+          format: double
+          example: 87688305
+          description: Id существующего неакцептованного лимита для изменения его параметров
+
+
+    SetConnotationValueOwner:
+      type: object
+      properties:
+        owner_id:
+          type: integer
+          description: ID договора на который устанавливается доп реквизит
+          example: 251192
+          format: int64
+      required:
+        - owner_id
+
+    SetConnotationValueParamCode:
+      type: object
+      properties:
+        param_code:
+          type: string
+          description: Код типа доп. реквизита
+          example: OwnerUSATaxRes
+      required:
+        - param_code
+    SetConnotationValueCode:
+      type: object
+      properties:
+        connotation_value_code:
+          type: string
+          description: Значение параметра в формате Code
+          example: '0'
+          maxLength: 32
+      additionalProperties: false
+      required:
+        - connotation_value_code
+    SetConnotationValueKind:
+      type: object
+      properties:
+        kind:
+          type: integer
+          description: Id типа доп. реквизита
+          example: 1032
+          format: int32
+      additionalProperties: false
+      required:
+        - kind
+    SetConnotationValueAmount:
+      type: object
+      properties:
+        connotation_value_amount:
+          type: number
+          description: Значение параметра в формате сумма
+          example: 100.05
+          format: double
+      additionalProperties: false
+      required:
+        - connotation_value_amount
+    SetConnotationValueFlag:
+      type: object
+      properties:
+        connotation_value_flag:
+          type: integer
+          description: Значение параметра в формате Flag
+          example: 365
+          format: int32
+      additionalProperties: false
+      required:
+        - connotation_value_flag
+    SetConnotationValueInfo:
+      type: object
+      properties:
+        connotation_value_info:
+          type: string
+          description: Значение параметра в формате Info (описание)
+          example: Индивидуально
+          maxLength: 240
+      additionalProperties: false
+      required:
+        - connotation_value_info
+    GetCreditsOverduesResponse:
+      type: object
+      properties:
+        treaty_id:
+          type: integer
+          description: ИД договора
+          example: 0
+          format: int32
+        annuity:
+          type: integer
+          description: аннуитет да (1)/ нет (0)
+          example: 0
+          format: int32
+        body_overdue:
+          type: number
+          description: тело просрочено
+          example: 0
+          format: double
+        commission_overdue:
+          type: number
+          description: просроченная комиссия
+          example: 0
+          format: double
+        currency:
+          type: string
+          description: валюта
+          example: UAH
+          maxLength: 3
+        payday:
+          type: integer
+          description: день платежа
+          example: 0
+          format: int32
+        payterm:
+          type: integer
+          description: условия оплаты
+          example: 0
+          format: int32
+        percent_overdue:
+          type: number
+          description: процент просроченной задолженности
+          format: double
+          example: 0
+        total_overdue:
+          type: number
+          description: общая просрочка
+          example: 0
+          format: double
+        max_days_overdue:
+          type: integer
+          description: к-во дней просрочки
+          example: 0
+          format: int32
+    PostAgreementsConnotationsResponse:
+      type: object
+      properties:
+        connotation_id:
+          type: integer
+          description: ИД доп реквизита
+          example: 47647117
+          format: int64
+        creator_id:
+          type: integer
+          description: Id cоздателя записи доп. реквизита
+          example: 8715
+          format: int32
+        created:
+          type: string
+          description: Дата и время создания записи доп. реквизита
+          example: '2012-11-09T13:14:28'
+          format: date-time
+        changer_id:
+          type: integer
+          description: Id пользователя изменившего запись доп. реквизита
+          example: 27793
+          format: int32
+        changed:
+          type: string
+          description: Дата и время изменения записи доп. реквизита
+          example: '2022-07-14T10:15:32'
+          format: datetime
+        owner_id:
+          type: integer
+          description: ID записи сущности владельца доп. реквизита
+          example: 333661
+          format: int64
+        code:
+          type: string
+          description: Значение доп. реквизита с типом Код
+          example: '3430935'
+          maxLength: 32
+        amount:
+          type: number
+          description: Значение доп. реквизита с типом Сумма
+          format: double
+          example: 60
+        flag:
+          type: integer
+          description: Значение доп. реквизита с типом Флаг
+          example: 44577
+          format: int64
+        info:
+          type: string
+          description: Значение доп. реквизита с типом Инфо (описание)
+          example: Импортный аккредитив
+          maxLength: 240
+        date_flag:
+          type: string
+          description: Значение доп. реквизита с типом Флаг и типом параметра TDate
+          example: '2018-02-08'
+          format: datetime
+        kind:
+          type: integer
+          description: Тип параметра (Id из Connotationlist)
+          example: 664
+          format: int32
+  responses:
+    '400':
+      description: BAD REQUEST
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ExceptionResponse'
+    '401':
+      description: UNAUTHORIZED
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ExceptionResponse'
+    '403':
+      description: FORBIDDEN
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ExceptionResponse'
+    '404':
+      description: NOT FOUND
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ExceptionResponse'
+    '475':
+      description: BUSINESS ERROR
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ExceptionResponse'
+    '500':
+      description: TO MANY REQUESTS
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ExceptionResponse'
+    '504':
+      description: GATEWAY TIMEOUT
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ExceptionResponse'
+    default:
+      description: UNEXPECTED ERROR
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ExceptionResponse'
+    RefinancingLoanAgreementResponse:
+      description: OK
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/RefinancingLoanAgreementResponse'
+    ChangeTreatyDatesResponse:
+      description: OK
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/PatchChangeTreatyDatesResponse'
+    GetCreditsOverduesResponse:
+      description: OK
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GetCreditsOverduesResponse'
+    PostAgreementnsConnotationsResponse:
+      description: OK
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/PostAgreementsConnotationsResponse'
+    MaoSAgreementsProductResponse:
+      description: OK
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/MaoSAgreementsProductResponse'
+    MaoTreatyClientsResponse:
+      description: OK
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/MaoTreatyClientsResponse'
+    CreateLimit:
+      description: OK
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/CreateLimit'
+paths:
+  /refinancing-loan-agreements:
+    post:
+      security:
+        - yupi_coffee_auth: []
+      tags:
+        - refinance
+      summary: Установка доп. соглашения, настройка доп. реквизитов
+      description: ХП FUIB_APP..up_coffee_RefinancingLoanAgreement
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/X-Flow-ID'
+        - $ref: '#/components/parameters/X-Systemcode'
+        - $ref: '#/components/parameters/X-Username'
+        - $ref: '#/components/parameters/agreement_id'
+        - $ref: '#/components/parameters/ref_agreement_id'
+      responses:
+        '200':
+          $ref: '#/components/responses/RefinancingLoanAgreementResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+        '475':
+          $ref: '#/components/responses/475'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
+        default:
+          $ref: '#/components/responses/default'
+  /treaties-dates:
+    patch:
+      security:
+        - yupi_coffee_auth: []
+      tags:
+        - change-dates
+      summary: Изменение дат начала и конца действия договора
+      description: ХП FUIB_APP..up_coffee_change_treaty_dates
+      requestBody:
+        required: true
+        content:
+          application/problem+json:
+            schema:
+              $ref: '#/components/schemas/ChangeTreatyDates'
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/X-Flow-ID'
+        - $ref: '#/components/parameters/X-Systemcode'
+        - $ref: '#/components/parameters/X-Username'
+      responses:
+        '200':
+          $ref: '#/components/responses/ChangeTreatyDatesResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+        '475':
+          $ref: '#/components/responses/475'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
+        default:
+          $ref: '#/components/responses/default'
+  /agreements/connotations:
+    post:
+      security:
+        - yupi_coffee_auth: []
+      tags:
+        - connotations
+      summary: Мeтод заполнения / редактирования доп. реквизитов на договор.
+      description: up_coffee_set_agreement_connotations -> FUIB_APP.dbo.up_sir_set_connotations ->SCROOGE.dbo.ui_SetConnotationValue
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/X-Flow-ID'
+        - $ref: '#/components/parameters/X-Systemcode'
+        - $ref: '#/components/parameters/X-Username'
+      requestBody:
+        description: SetConnotationValue
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/SetConnotationValueOwner'
+                - anyOf:
+                    - $ref: '#/components/schemas/SetConnotationValueParamCode'
+                    - $ref: '#/components/schemas/SetConnotationValueKind'
+                    - anyOf:
+                        - $ref: '#/components/schemas/SetConnotationValueCode'
+                        - $ref: '#/components/schemas/SetConnotationValueAmount'
+                        - $ref: '#/components/schemas/SetConnotationValueFlag'
+                        - $ref: '#/components/schemas/SetConnotationValueInfo'
+              example:
+                kind: 1032
+                param_code: OwnerUSATaxRes
+                owner_id: 251192
+                connotation_value_code: '0'
+                connotation_value_amount: 100.05
+                connotation_value_flag: 365
+                connotation_value_info: Индивидуально
+      responses:
+        '200':
+          $ref: '#/components/responses/PostAgreementnsConnotationsResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+        '475':
+          $ref: '#/components/responses/475'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
+        default:
+          $ref: '#/components/responses/default'
+  /credits/overdues:
+    get:
+      security:
+        - yupi_coffee_auth: []
+      tags:
+        - credit-resources
+      summary: Получение данных просроченной задолженности по кредиту по его ID договора
+      description: ХП yupi.up_coffee_get_credit_overdue
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/X-Flow-ID'
+        - $ref: '#/components/parameters/X-Systemcode'
+        - $ref: '#/components/parameters/X-Username'
+        - $ref: '#/components/parameters/treaty_id'
+      responses:
+        '200':
+          $ref: '#/components/responses/GetCreditsOverduesResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+        '475':
+          $ref: '#/components/responses/475'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
+        default:
+          $ref: '#/components/responses/default'
+  /mao-agreements/products:
+    get:
+      security:
+        - yupi_coffee_auth: []
+      tags:
+        - mao-agreements
+      summary: Получение доступных карточных продуктов для карточного пакета
+      description: ХП FUIB_APP.yupi.up_coffee_get_mao_agreements_products
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/X-Flow-ID'
+        - $ref: '#/components/parameters/X-Systemcode'
+        - $ref: '#/components/parameters/X-Username'
+        - $ref: '#/components/parameters/packet_id'
+        - $ref: '#/components/parameters/instant_issue'
+        - $ref: '#/components/parameters/packet_flag'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          $ref: '#/components/responses/MaoSAgreementsProductResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+        '475':
+          $ref: '#/components/responses/475'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
+        default:
+          $ref: '#/components/responses/default'
+  /mao-agreements/salary-clients:
+    get:
+      security:
+        - yupi_coffee_auth: []
+      tags:
+        - mao-agreements
+      summary: Отримання співробітників по МАО договору
+      description: ХП FUIB_APP.yupi.up_coffee_get_treaty_clients
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/X-Flow-ID'
+        - $ref: '#/components/parameters/X-Systemcode'
+        - $ref: '#/components/parameters/X-Username'
+        - $ref: '#/components/parameters/treaty_id'
+        - $ref: '#/components/parameters/full_name'
+        - $ref: '#/components/parameters/passport_series'
+        - $ref: '#/components/parameters/passport_number'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          $ref: '#/components/responses/MaoTreatyClientsResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+        '475':
+          $ref: '#/components/responses/475'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
+        default:
+          $ref: '#/components/responses/default'
+  /ib-agreements/limits:
+    post:
+      security:
+        - yupi_coffee_auth: []
+      tags:
+        - create-limits
+      summary: Метод для встановлення ліміту по договору ІБ
+      description: ХП FUIB_APP.yupi.up_coffee_create_limit
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/X-Flow-ID'
+        - $ref: '#/components/parameters/X-Systemcode'
+        - $ref: '#/components/parameters/X-Username'
+      requestBody:
+        description: Limit parameters
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/BodyCreateLimit'
+      responses:
+        '200':
+          $ref: '#/components/responses/CreateLimit'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+        '475':
+          $ref: '#/components/responses/475'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
+        default:
+          $ref: '#/components/responses/default'
+  /ib-agreements/limits/states:
+    patch:
+      security:
+        - yupi_coffee_auth: []
+      tags:
+        - accept-limits
+      summary: Метод аксепту ліміту по договору ІБ
+      description: ХП FUIB_APP.yupi.up_coffee_accept_limit
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/X-Flow-ID'
+        - $ref: '#/components/parameters/X-Systemcode'
+        - $ref: '#/components/parameters/X-Username'
+      requestBody:
+        description: Limit parameters
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/BodyAcceptLimit'
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+        '475':
+          $ref: '#/components/responses/475'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
+        default:
+          $ref: '#/components/responses/default'
