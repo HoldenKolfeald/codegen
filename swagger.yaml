@@ -781,11 +781,22 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/CreateLimit'
+  securitySchemes:
+    yupi_coffee_api_key:
+      type: apiKey
+      name: yupi_coffee_api_key
+      in: header
+    yupi_coffee_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: http://3ds.swagger.io/oauth/dialog
+
 paths:
   /refinancing-loan-agreements:
     post:
       security:
-        - yupi_coffee_auth: []
+        - yupi_coffee_auth: [ ]
       tags:
         - refinance
       summary: Установка доп. соглашения, настройка доп. реквизитов
@@ -819,7 +830,7 @@ paths:
   /treaties-dates:
     patch:
       security:
-        - yupi_coffee_auth: []
+        - yupi_coffee_auth: [ ]
       tags:
         - change-dates
       summary: Изменение дат начала и конца действия договора
@@ -857,7 +868,7 @@ paths:
   /agreements/connotations:
     post:
       security:
-        - yupi_coffee_auth: []
+        - yupi_coffee_auth: [ ]
       tags:
         - connotations
       summary: Мeтод заполнения / редактирования доп. реквизитов на договор.
@@ -913,7 +924,7 @@ paths:
   /credits/overdues:
     get:
       security:
-        - yupi_coffee_auth: []
+        - yupi_coffee_auth: [ ]
       tags:
         - credit-resources
       summary: Получение данных просроченной задолженности по кредиту по его ID договора
@@ -946,7 +957,7 @@ paths:
   /mao-agreements/products:
     get:
       security:
-        - yupi_coffee_auth: []
+        - yupi_coffee_auth: [ ]
       tags:
         - mao-agreements
       summary: Получение доступных карточных продуктов для карточного пакета
@@ -983,7 +994,7 @@ paths:
   /mao-agreements/salary-clients:
     get:
       security:
-        - yupi_coffee_auth: []
+        - yupi_coffee_auth: [ ]
       tags:
         - mao-agreements
       summary: Отримання співробітників по МАО договору
@@ -1021,7 +1032,7 @@ paths:
   /ib-agreements/limits:
     post:
       security:
-        - yupi_coffee_auth: []
+        - yupi_coffee_auth: [ ]
       tags:
         - create-limits
       summary: Метод для встановлення ліміту по договору ІБ
@@ -1060,7 +1071,7 @@ paths:
   /ib-agreements/limits/states:
     patch:
       security:
-        - yupi_coffee_auth: []
+        - yupi_coffee_auth: [ ]
       tags:
         - accept-limits
       summary: Метод аксепту ліміту по договору ІБ
@@ -1096,3 +1107,4 @@ paths:
           $ref: '#/components/responses/504'
         default:
           $ref: '#/components/responses/default'
+
